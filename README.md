@@ -325,6 +325,29 @@ app.post('/api/analyze', async (req, res) => {
 app.listen(3000);
 ```
 
+### Option 3: Avec persistance SQL (Optionnel)
+
+Un schéma SQL est disponible dans `sql/schema.sql` pour persister les analyses :
+
+```bash
+# PostgreSQL / Supabase / Neon
+psql -d your_database -f sql/schema.sql
+```
+
+**Tables disponibles :**
+
+| Table | Description |
+|-------|-------------|
+| `analyses` | Historique des analyses (score, date, provider) |
+| `findings` | Résultats par exigence (42 lignes par analyse) |
+| `recommended_clauses` | Clauses de remédiation FR/EN |
+| `contracts` | Métadonnées des contrats (optionnel) |
+
+**Vues utiles :**
+- `v_analysis_summary` : Résumé avec compteurs par statut
+- `v_common_gaps` : Exigences les plus souvent absentes
+- `v_provider_scores` : Score moyen par fournisseur
+
 ---
 
 ## Limitations
@@ -393,11 +416,13 @@ Cela signifie :
 - 📡 **Événements de progression** : Types `StreamEvent` avec phases (analyzing, parsing, generating)
 - 🔧 **Types améliorés** : Export des types `StreamAnalyzeOptions`, `StreamCallback`, `AIProvider`
 - 📦 **Module exports** : Support des imports séparés (`./types`, `./checklist`)
+- 🗄️ **Schéma SQL optionnel** : `sql/schema.sql` pour persistance PostgreSQL/Supabase
 
 **Améliorations :**
-- Version standalone (aucune dépendance Supabase)
+- Version standalone (aucune dépendance Supabase requise)
 - Support Node.js >= 18.0.0 (fetch natif)
 - Meilleure gestion des erreurs avec codes
+- Vues SQL pour reporting (`v_analysis_summary`, `v_common_gaps`)
 
 ### v1.0.0 (Décembre 2025)
 
