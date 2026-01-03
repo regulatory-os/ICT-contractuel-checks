@@ -3,9 +3,11 @@
  *
  * AI-powered analysis of ICT outsourcing contracts for DORA/EBA compliance.
  * Supports multiple AI providers: Anthropic Claude (preferred), Google Gemini, OpenAI.
+ * Now with streaming support for real-time analysis feedback.
  *
  * @license AGPL-3.0
  * @author Regulatory OS (https://regulatoryos.fr)
+ * @version 1.1.0
  */
 
 import { CHECKLIST } from '../data/checklist';
@@ -13,7 +15,12 @@ import {
   ContractAnalysis,
   AnalysisResultItem,
   FrontendResponse,
-  FrontendFinding
+  FrontendFinding,
+  StreamEvent,
+  StreamCallback,
+  StreamAnalyzeOptions,
+  AIProvider,
+  AnalyzeOptions
 } from '../types';
 
 // =============================================================================
@@ -403,21 +410,463 @@ export async function callOpenAI(
 }
 
 // =============================================================================
-// MAIN ANALYSIS FUNCTION
+// STREAMING AI PROVIDERS
 // =============================================================================
 
-export type AIProvider = 'anthropic' | 'gemini' | 'openai';
+/**
+ * Stream from Anthropic Claude API
+ * Returns an async generator yielding text chunks
+ */
+export async function* streamAnthropic(
+  prompt: string,
+  apiKey: string,
+  model: string = "claude-opus-4-5-20251101"
+): AsyncGenerator<string, void, unknown> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS);
 
-export interface AnalyzeOptions {
-  /** AI provider to use */
-  provider: AIProvider;
-  /** API key for the selected provider */
-  apiKey: string;
-  /** Optional model override */
-  model?: string;
-  /** Optional file name for the report */
-  fileName?: string;
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: CONFIG.MAX_OUTPUT_TOKENS,
+        temperature: CONFIG.TEMPERATURE,
+        stream: true,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Anthropic API error: ${error}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body");
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+              yield parsed.delta.text;
+            }
+          } catch {
+            // Skip non-JSON lines
+          }
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
+
+/**
+ * Stream from Google Gemini API
+ * Returns an async generator yielding text chunks
+ */
+export async function* streamGemini(
+  prompt: string,
+  apiKey: string,
+  model: string = "gemini-1.5-pro"
+): AsyncGenerator<string, void, unknown> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            temperature: CONFIG.TEMPERATURE,
+            maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Gemini API error: ${error}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body");
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+          try {
+            const parsed = JSON.parse(data);
+            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              yield text;
+            }
+          } catch {
+            // Skip non-JSON lines
+          }
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Stream from OpenAI API
+ * Returns an async generator yielding text chunks
+ */
+export async function* streamOpenAI(
+  prompt: string,
+  apiKey: string,
+  model: string = "gpt-4o"
+): AsyncGenerator<string, void, unknown> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        stream: true,
+        messages: [
+          {
+            role: "system",
+            content: "You are a regulatory compliance expert. Always respond with valid JSON.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: CONFIG.TEMPERATURE,
+        max_tokens: CONFIG.MAX_OUTPUT_TOKENS,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenAI API error: ${error}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body");
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              yield content;
+            }
+          } catch {
+            // Skip non-JSON lines
+          }
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// =============================================================================
+// STREAMING ANALYSIS FUNCTION
+// =============================================================================
+
+/**
+ * Helper to emit stream events
+ */
+function emitEvent(callback: StreamCallback | undefined, event: StreamEvent): void {
+  if (callback) {
+    callback(event);
+  }
+}
+
+/**
+ * Analyze an ICT contract with streaming support
+ * Provides real-time feedback during analysis
+ *
+ * @param content - The contract text to analyze
+ * @param options - Streaming analysis options
+ * @returns The final analysis result
+ *
+ * @example
+ * ```typescript
+ * const result = await analyzeContractStream(contractText, {
+ *   provider: 'anthropic',
+ *   apiKey: process.env.ANTHROPIC_API_KEY!,
+ *   fileName: 'contrat.pdf',
+ *   onEvent: (event) => {
+ *     if (event.type === 'chunk') {
+ *       process.stdout.write(event.content);
+ *     } else if (event.type === 'progress') {
+ *       console.log(`[${event.phase}] ${event.message}`);
+ *     }
+ *   }
+ * });
+ * ```
+ */
+export async function analyzeContractStream(
+  content: string,
+  options: StreamAnalyzeOptions
+): Promise<FrontendResponse> {
+  const { provider, apiKey, model, fileName = "Document", onEvent, includeRaw } = options;
+
+  // Validate content length
+  if (content.length < CONFIG.MIN_CONTENT_CHARS) {
+    const error: StreamEvent = {
+      type: 'error',
+      timestamp: Date.now(),
+      error: `Content too short (minimum ${CONFIG.MIN_CONTENT_CHARS} characters)`,
+      code: 'CONTENT_TOO_SHORT'
+    };
+    emitEvent(onEvent, error);
+    throw new Error(error.error);
+  }
+
+  if (content.length > CONFIG.MAX_CONTENT_CHARS) {
+    const error: StreamEvent = {
+      type: 'error',
+      timestamp: Date.now(),
+      error: `Content too long (maximum ${CONFIG.MAX_CONTENT_CHARS} characters)`,
+      code: 'CONTENT_TOO_LONG'
+    };
+    emitEvent(onEvent, error);
+    throw new Error(error.error);
+  }
+
+  // Emit start event
+  emitEvent(onEvent, {
+    type: 'start',
+    timestamp: Date.now(),
+    fileName,
+    provider
+  });
+
+  // Build prompt
+  const prompt = buildPrompt(content);
+
+  // Emit analyzing progress
+  emitEvent(onEvent, {
+    type: 'progress',
+    timestamp: Date.now(),
+    phase: 'analyzing',
+    message: 'Envoi au modèle IA...',
+    percent: 10
+  });
+
+  // Get the appropriate stream generator
+  let streamGenerator: AsyncGenerator<string, void, unknown>;
+  switch (provider) {
+    case 'anthropic':
+      streamGenerator = streamAnthropic(prompt, apiKey, model);
+      break;
+    case 'gemini':
+      streamGenerator = streamGemini(prompt, apiKey, model);
+      break;
+    case 'openai':
+      streamGenerator = streamOpenAI(prompt, apiKey, model);
+      break;
+    default:
+      throw new Error(`Unknown AI provider: ${provider}`);
+  }
+
+  // Collect streamed response
+  let accumulated = "";
+  let chunkCount = 0;
+
+  try {
+    for await (const chunk of streamGenerator) {
+      accumulated += chunk;
+      chunkCount++;
+
+      // Emit chunk event
+      emitEvent(onEvent, {
+        type: 'chunk',
+        timestamp: Date.now(),
+        content: chunk,
+        accumulated
+      });
+
+      // Emit progress periodically
+      if (chunkCount % 50 === 0) {
+        emitEvent(onEvent, {
+          type: 'progress',
+          timestamp: Date.now(),
+          phase: 'analyzing',
+          message: `Analyse en cours... (${accumulated.length} caractères reçus)`,
+          percent: Math.min(80, 10 + Math.floor(accumulated.length / 500))
+        });
+      }
+    }
+  } catch (err) {
+    const error: StreamEvent = {
+      type: 'error',
+      timestamp: Date.now(),
+      error: err instanceof Error ? err.message : 'Unknown streaming error',
+      code: 'STREAM_ERROR'
+    };
+    emitEvent(onEvent, error);
+    throw err;
+  }
+
+  // Emit parsing progress
+  emitEvent(onEvent, {
+    type: 'progress',
+    timestamp: Date.now(),
+    phase: 'parsing',
+    message: 'Parsing de la réponse JSON...',
+    percent: 85
+  });
+
+  // Parse response
+  let rawResult: ContractAnalysis;
+  try {
+    rawResult = parseAIResponse(accumulated, fileName);
+  } catch (err) {
+    const error: StreamEvent = {
+      type: 'error',
+      timestamp: Date.now(),
+      error: err instanceof Error ? err.message : 'JSON parse error',
+      code: 'PARSE_ERROR'
+    };
+    emitEvent(onEvent, error);
+    throw err;
+  }
+
+  // Emit generating progress
+  emitEvent(onEvent, {
+    type: 'progress',
+    timestamp: Date.now(),
+    phase: 'generating',
+    message: 'Génération du rapport...',
+    percent: 95
+  });
+
+  // Transform to frontend format
+  const result = transformToFrontendFormat(rawResult);
+
+  // Emit complete event
+  emitEvent(onEvent, {
+    type: 'complete',
+    timestamp: Date.now(),
+    result,
+    ...(includeRaw ? { rawResult } : {})
+  });
+
+  return result;
+}
+
+/**
+ * Analyze an ICT contract with streaming, returning raw result
+ * Useful when you need access to recommended clauses and general clauses
+ */
+export async function analyzeContractStreamRaw(
+  content: string,
+  options: StreamAnalyzeOptions
+): Promise<ContractAnalysis> {
+  const modifiedOptions: StreamAnalyzeOptions = {
+    ...options,
+    includeRaw: true
+  };
+
+  // Use a promise to capture the raw result
+  let capturedRaw: ContractAnalysis | null = null;
+  const originalCallback = options.onEvent;
+
+  modifiedOptions.onEvent = (event) => {
+    if (event.type === 'complete' && event.rawResult) {
+      capturedRaw = event.rawResult;
+    }
+    if (originalCallback) {
+      originalCallback(event);
+    }
+  };
+
+  await analyzeContractStream(content, modifiedOptions);
+
+  if (!capturedRaw) {
+    throw new Error("Failed to capture raw result");
+  }
+
+  return capturedRaw;
+}
+
+// =============================================================================
+// MAIN ANALYSIS FUNCTION (NON-STREAMING)
+// =============================================================================
+
+// Types are now imported from ../types
 
 /**
  * Analyze an ICT outsourcing contract for DORA/EBA compliance

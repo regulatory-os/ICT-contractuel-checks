@@ -1,19 +1,38 @@
 {
   "name": "ict-contractuel-checks",
-  "version": "1.0.0",
-  "description": "AI-powered ICT outsourcing contract compliance checker for DORA/EBA",
+  "version": "1.1.0",
+  "description": "AI-powered ICT outsourcing contract compliance checker for DORA/EBA with streaming support",
   "main": "src/lib/analyzer.ts",
+  "types": "src/types/index.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/lib/analyzer.ts",
+      "types": "./src/types/index.ts"
+    },
+    "./types": {
+      "import": "./src/types/index.ts",
+      "types": "./src/types/index.ts"
+    },
+    "./checklist": {
+      "import": "./src/data/checklist.ts",
+      "types": "./src/types/index.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "test": "echo \"No tests yet\""
+    "test": "echo \"No tests yet\"",
+    "typecheck": "tsc --noEmit"
   },
-  "keywords": ["dora", "eba", "compliance", "ict", "outsourcing", "contract", "audit"],
+  "keywords": ["dora", "eba", "compliance", "ict", "outsourcing", "contract", "audit", "streaming", "ai"],
   "author": "Robin Jacquet <robin.jacquet@regulatoryos.fr>",
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/regulatory-os/ICT-contractuel-checks.git"
   },
-  "homepage": "https://regulatoryos.fr/tools/ict-check"
+  "homepage": "https://regulatoryos.fr/tools/ict-check",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
