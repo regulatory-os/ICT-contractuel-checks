@@ -2,6 +2,8 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Open Source](https://img.shields.io/badge/Open%20Source-AGPL--3.0-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](package.json)
+[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg)](package.json)
 
 Audit automatisé par IA de la conformité des contrats d'externalisation ICT aux exigences DORA, EBA et Arrêté 2014.
 
@@ -25,10 +27,12 @@ Audit automatisé par IA de la conformité des contrats d'externalisation ICT au
 
 - **42 exigences vérifiées** : DORA Article 30, EBA Guidelines (EBA/GL/2019/02), Arrêté du 3 novembre 2014
 - **Analyse IA** : Utilise Claude Opus 4.5 (ou Gemini/GPT-4 en alternative)
+- **Streaming en temps réel** : Suivez l'analyse en direct avec des événements de progression (v1.1.0)
 - **Détection intelligente** : Identifie les clauses générales de conformité (statut IMPLICIT)
 - **Clauses de remédiation** : Génère des propositions de clauses FR/EN pour les gaps identifiés
 - **Score de conformité** : Score global de 0 à 100%
 - **Export** : PDF et Excel pour les rapports
+- **Standalone** : Aucune dépendance externe (pas de Supabase requis)
 
 ---
 
@@ -93,16 +97,57 @@ result.findings.forEach(finding => {
 });
 ```
 
-### 3. Accès aux données brutes
+### 3. Analyse avec streaming (v1.1.0)
+
+Pour une meilleure expérience utilisateur avec feedback en temps réel :
+
+```typescript
+import { analyzeContractStream } from './src/lib/analyzer';
+
+const result = await analyzeContractStream(contractText, {
+  provider: 'anthropic',
+  apiKey: process.env.ANTHROPIC_API_KEY!,
+  fileName: 'Contrat Fournisseur XYZ',
+  onEvent: (event) => {
+    switch (event.type) {
+      case 'start':
+        console.log(`🚀 Début de l'analyse: ${event.fileName}`);
+        break;
+      case 'progress':
+        console.log(`⏳ [${event.phase}] ${event.message} (${event.percent}%)`);
+        break;
+      case 'chunk':
+        process.stdout.write('.'); // Indicateur de progression
+        break;
+      case 'complete':
+        console.log(`\n✅ Analyse terminée: ${event.result.overallScore}%`);
+        break;
+      case 'error':
+        console.error(`❌ Erreur: ${event.error}`);
+        break;
+    }
+  }
+});
+```
+
+### 4. Accès aux données brutes
 
 Pour accéder aux clauses recommandées et aux clauses générales détectées :
 
 ```typescript
-import { analyzeContractRaw } from './src/lib/analyzer';
+import { analyzeContractRaw, analyzeContractStreamRaw } from './src/lib/analyzer';
 
+// Version standard
 const rawResult = await analyzeContractRaw(contractText, {
   provider: 'anthropic',
   apiKey: process.env.ANTHROPIC_API_KEY!,
+});
+
+// Ou version streaming
+const rawResultStream = await analyzeContractStreamRaw(contractText, {
+  provider: 'anthropic',
+  apiKey: process.env.ANTHROPIC_API_KEY!,
+  onEvent: (event) => { /* ... */ }
 });
 
 // Clauses générales de conformité détectées
@@ -194,6 +239,32 @@ rawResult.recommendedClauses.forEach(clause => {
 | Anthropic | `claude-opus-4-5-20251101` | `claude-sonnet-4-5-20250929` |
 | Google | `gemini-1.5-pro` | `gemini-2.0-flash` |
 | OpenAI | `gpt-4o` | `gpt-4-turbo` |
+
+### Types de streaming (v1.1.0)
+
+```typescript
+// Types d'événements disponibles
+type StreamEventType = 'start' | 'chunk' | 'progress' | 'complete' | 'error';
+
+// Événement de progression
+interface StreamEventProgress {
+  type: 'progress';
+  timestamp: number;
+  phase: 'parsing' | 'analyzing' | 'generating';
+  message: string;
+  percent?: number;
+}
+
+// Options de streaming
+interface StreamAnalyzeOptions {
+  provider: 'anthropic' | 'gemini' | 'openai';
+  apiKey: string;
+  model?: string;
+  fileName?: string;
+  onEvent?: (event: StreamEvent) => void;
+  includeRaw?: boolean;
+}
+```
 
 ### Coût indicatif (Claude Opus 4.5)
 
@@ -313,6 +384,31 @@ Cela signifie :
 
 ---
 
+## Changelog
+
+### v1.1.0 (Janvier 2026)
+
+**Nouvelles fonctionnalités :**
+- ✨ **Streaming en temps réel** : Nouvelles fonctions `analyzeContractStream()` et `analyzeContractStreamRaw()` pour suivre l'analyse en direct
+- 📡 **Événements de progression** : Types `StreamEvent` avec phases (analyzing, parsing, generating)
+- 🔧 **Types améliorés** : Export des types `StreamAnalyzeOptions`, `StreamCallback`, `AIProvider`
+- 📦 **Module exports** : Support des imports séparés (`./types`, `./checklist`)
+
+**Améliorations :**
+- Version standalone (aucune dépendance Supabase)
+- Support Node.js >= 18.0.0 (fetch natif)
+- Meilleure gestion des erreurs avec codes
+
+### v1.0.0 (Décembre 2025)
+
+- Version initiale
+- 42 exigences DORA/EBA/Arrêté 2014
+- Support Claude, Gemini, OpenAI
+- Détection clauses générales (IMPLICIT)
+- Génération clauses de remédiation FR/EN
+
+---
+
 ## Voir aussi
 
 - [African-screening](https://github.com/regulatory-os/African-screening) — Screening contre les listes de sanctions UEMOA/CEMAC
@@ -320,4 +416,4 @@ Cela signifie :
 
 ---
 
-*Dernière mise à jour : Décembre 2025*
+*Dernière mise à jour : Janvier 2026*
