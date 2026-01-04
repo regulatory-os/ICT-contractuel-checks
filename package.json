@@ -1,7 +1,7 @@
 {
   "name": "ict-contractuel-checks",
-  "version": "1.1.0",
-  "description": "AI-powered ICT outsourcing contract compliance checker for DORA/EBA with streaming support",
+  "version": "2.0.0",
+  "description": "AI-powered ICT outsourcing contract compliance checker for DORA/EBA - v3.0 checklist with 35 requirements",
   "main": "src/lib/analyzer.ts",
   "types": "src/types/index.ts",
   "type": "module",

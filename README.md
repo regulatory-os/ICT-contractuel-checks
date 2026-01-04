@@ -2,7 +2,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Open Source](https://img.shields.io/badge/Open%20Source-AGPL--3.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](package.json)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg)](package.json)
 
 Audit automatisé par IA de la conformité des contrats d'externalisation ICT aux exigences DORA, EBA et Arrêté 2014.
@@ -11,7 +11,7 @@ Audit automatisé par IA de la conformité des contrats d'externalisation ICT au
 
 ---
 
-## À propos de ce projet
+## A propos de ce projet
 
 > **Je ne suis pas développeur.**
 >
@@ -23,15 +23,20 @@ Audit automatisé par IA de la conformité des contrats d'externalisation ICT au
 
 ---
 
-## Fonctionnalités
+## Fonctionnalités v2.0.0
 
-- **42 exigences vérifiées** : DORA Article 30, EBA Guidelines (EBA/GL/2019/02), Arrêté du 3 novembre 2014
-- **Analyse IA** : Utilise Claude Opus 4.5 (ou Gemini/GPT-4 en alternative)
-- **Streaming en temps réel** : Suivez l'analyse en direct avec des événements de progression (v1.1.0)
+- **35 exigences vérifiées** : Checklist v3.0 restructurée en 4 sections
+  - Section I: Tous les contrats ICT (10 exigences) - DORA 30.1 + 30.2
+  - Section II: Fonctions critiques (10 exigences) - DORA 30.3
+  - Section III: Spécificités EBA (3 exigences)
+  - Section IV: Spécificités françaises (12 exigences) - Arrêté 2014
+- **Scoring v3.1** : Pondération par criticité (CRITICAL=3, MAJOR=2, MINOR=1)
+- **Exigences CRITICAL** : 4 exigences ne pouvant pas être IMPLICIT (I.7, I.10, II.4, II.10)
+- **Récupération de troncature** : Parsing robuste des réponses JSON tronquées
+- **Auto-recommandation** : Génération automatique de suggestions pour les gaps
+- **Analyse IA** : Multi-provider (Claude, Gemini, OpenAI)
 - **Détection intelligente** : Identifie les clauses générales de conformité (statut IMPLICIT)
-- **Clauses de remédiation** : Génère des propositions de clauses FR/EN pour les gaps identifiés
-- **Score de conformité** : Score global de 0 à 100%
-- **Export** : PDF et Excel pour les rapports
+- **Clauses de remédiation** : Génère des propositions de clauses FR/EN
 - **Standalone** : Aucune dépendance externe (pas de Supabase requis)
 
 ---
@@ -87,43 +92,41 @@ console.log(`Score de conformité: ${result.overallScore}%`);
 console.log(`Résumé: ${result.summary}`);
 
 result.findings.forEach(finding => {
-  console.log(`${finding.requirement}: ${finding.status}`);
+  console.log(`[${finding.requirementId}] ${finding.requirement}: ${finding.status}`);
+  console.log(`  Criticité: ${finding.criticality}`);
   if (finding.status !== 'compliant') {
     console.log(`  → ${finding.details}`);
     if (finding.recommendation) {
-      console.log(`  📝 ${finding.recommendation}`);
+      console.log(`  Recommandation: ${finding.recommendation}`);
     }
   }
 });
 ```
 
-### 3. Analyse avec streaming (v1.1.0)
+### 3. Analyse avec événements de progression
 
-Pour une meilleure expérience utilisateur avec feedback en temps réel :
+Pour une meilleure expérience utilisateur avec feedback :
 
 ```typescript
-import { analyzeContractStream } from './src/lib/analyzer';
+import { analyzeContractWithEvents } from './src/lib/analyzer';
 
-const result = await analyzeContractStream(contractText, {
+const result = await analyzeContractWithEvents(contractText, {
   provider: 'anthropic',
   apiKey: process.env.ANTHROPIC_API_KEY!,
   fileName: 'Contrat Fournisseur XYZ',
   onEvent: (event) => {
     switch (event.type) {
       case 'start':
-        console.log(`🚀 Début de l'analyse: ${event.fileName}`);
+        console.log(`Début de l'analyse (${event.totalSteps} étapes)`);
         break;
-      case 'progress':
-        console.log(`⏳ [${event.phase}] ${event.message} (${event.percent}%)`);
+      case 'step':
+        console.log(`[${event.step}/${4}] ${event.label}`);
         break;
-      case 'chunk':
-        process.stdout.write('.'); // Indicateur de progression
-        break;
-      case 'complete':
-        console.log(`\n✅ Analyse terminée: ${event.result.overallScore}%`);
+      case 'done':
+        console.log(`Analyse terminée: ${event.data.overallScore}%`);
         break;
       case 'error':
-        console.error(`❌ Erreur: ${event.error}`);
+        console.error(`Erreur: ${event.message}`);
         break;
     }
   }
@@ -135,19 +138,11 @@ const result = await analyzeContractStream(contractText, {
 Pour accéder aux clauses recommandées et aux clauses générales détectées :
 
 ```typescript
-import { analyzeContractRaw, analyzeContractStreamRaw } from './src/lib/analyzer';
+import { analyzeContractRaw } from './src/lib/analyzer';
 
-// Version standard
 const rawResult = await analyzeContractRaw(contractText, {
   provider: 'anthropic',
   apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
-// Ou version streaming
-const rawResultStream = await analyzeContractStreamRaw(contractText, {
-  provider: 'anthropic',
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-  onEvent: (event) => { /* ... */ }
 });
 
 // Clauses générales de conformité détectées
@@ -155,7 +150,7 @@ console.log('Clauses générales:', rawResult.generalClauses);
 
 // Clauses recommandées pour les gaps
 rawResult.recommendedClauses.forEach(clause => {
-  console.log(`\n📋 ${clause.title} (${clause.reference})`);
+  console.log(`\n${clause.title} (${clause.reference})`);
   console.log(`FR: ${clause.textFr}`);
   console.log(`EN: ${clause.textEn}`);
 });
@@ -163,61 +158,106 @@ rawResult.recommendedClauses.forEach(clause => {
 
 ---
 
-## Checklist des 42 exigences
+## Checklist v3.0 : 35 exigences
 
-| Section | ID | Exigence | Criticité | Référence |
-|---------|-----|----------|-----------|-----------|
-| **A. Généralités** | A1 | Contrat écrit unique | MINOR | DORA 30.1 |
-| | A2 | Description des services | MAJOR | DORA 30.2(a) |
-| | A3 | Durée et préavis | MINOR | ABE GL 75b |
-| | A4 | Droit applicable | MINOR | ABE GL 75c |
-| | A5 | Obligations financières | MINOR | ABE GL 75d |
-| **B. Sous-traitance** | B6 | Autorisation sous-traitance | MAJOR | DORA 30.2(a) |
-| | B7 | Activités exclues | MINOR | ABE GL 78a |
-| | B8 | Conditions sous-traitance | MINOR | ABE GL 78b |
-| | B9 | Supervision sous-traitants | MAJOR | ABE GL 78c |
-| | B10 | Notification préalable | MAJOR | DORA 30.3(b) |
-| | B11 | Résiliation (Sous-traitance) | MAJOR | ABE GL 78f |
-| | B12 | Engagements sous-traitant | MAJOR | ABE GL 79 |
-| **C. Localisation** | C13 | Localisation données | MAJOR | DORA 30.2(b) |
-| | C14 | Notif. changement lieu | MAJOR | DORA 30.2(b) |
-| **D. Protection Données** | D15 | Sécurité (CIA) | MAJOR | DORA 30.2(c) |
-| | D16 | Approche par risques | MINOR | ABE GL 83 |
-| | D17 | RGPD & Secret Bancaire | MAJOR | ABE GL 84 |
-| | D18 | Accès et restitution | MAJOR | DORA 30.2(d) |
-| **E. SLA** | E19 | Description SLA | MAJOR | DORA 30.2(e) |
-| | E20 | SLA Détaillés (Critique) | MAJOR | DORA 30.3(a) |
-| **F. Incidents** | F21 | Assistance Incident (Coût) | **CRITICAL** | DORA 30.2(f) |
-| | F22 | Notification Incidents | MAJOR | DORA 30.3(b) |
-| | F23 | Continuité (BCP) | MAJOR | DORA 30.3(c) |
-| **G. Autorités** | G24 | Coopération Autorités | MAJOR | DORA 30.2(g) |
-| **H. Sortie** | H25 | Droits de résiliation | MAJOR | DORA 30.2(h) |
-| | H26 | Transition Obligatoire | **CRITICAL** | DORA 30.3(f)(i) |
-| **I. Audit** | I27 | Monitoring continu | MAJOR | DORA 30.3(e) |
-| | I28 | Droits d'Audit/Accès | MAJOR | ABE GL 87 |
-| | I29 | Assurance Alternative | MINOR | ABE GL 91 |
-| | I30 | Coopération Audit | MAJOR | ABE GL 95 |
-| | I31 | Détails Audit | MINOR | ABE GL 90 |
-| **J. Nouveautés DORA** | J32 | Formation Sécurité ICT | **CRITICAL** | DORA 30.2(i) |
-| | J33 | Tests TLPT | **CRITICAL** | DORA 30.3(d) |
-| | J34 | Transition Obligatoire | **CRITICAL** | DORA 30.3(f)(i) |
-| **K. Spécificités FR** | K35 | Définition Activités | MINOR | Arrêté Art. 10 q) |
-| | K36 | Prestations Essentielles | MINOR | Arrêté Art. 10 r) |
-| | K37 | Agrément Prestataire | MINOR | Arrêté Art. 231 |
-| | K40 | Responsabilité Entité | MAJOR | Arrêté Art. 237 |
-| | K42 | Modif. Substantielle | MAJOR | Arrêté Art. 239 d) |
+### Section I : Tous les contrats ICT (10 exigences)
+*Base: DORA Article 30.1 + 30.2*
+
+| ID | Exigence | Criticité | Référence |
+|----|----------|-----------|-----------|
+| I.1 | Contrat écrit unique | MINOR | DORA 30.1 |
+| I.2 | Description services + sous-traitance | MAJOR | DORA 30.2(a) |
+| I.3 | Localisation + notification | MAJOR | DORA 30.2(b) |
+| I.4 | Protection données (DAIC) | MAJOR | DORA 30.2(c) |
+| I.5 | Accès et restitution données | MAJOR | DORA 30.2(d) |
+| I.6 | SLA avec RTO/RPO | MAJOR | DORA 30.2(e) |
+| **I.7** | **Assistance incident (coût)** | **CRITICAL** | DORA 30.2(f) |
+| I.8 | Coopération autorités | MAJOR | DORA 30.2(g) |
+| I.9 | Droits de résiliation | MAJOR | DORA 30.2(h) |
+| **I.10** | **Formation sécurité ICT** | **CRITICAL** | DORA 30.2(i) |
+
+### Section II : Fonctions critiques (10 exigences)
+*Base: DORA Article 30.3 - Uniquement pour services ICT soutenant fonctions critiques*
+
+| ID | Exigence | Criticité | Référence |
+|----|----------|-----------|-----------|
+| II.1 | SLA détaillés + actions correctives | MAJOR | DORA 30.3(a) |
+| II.2 | Notification incidents | MAJOR | DORA 30.3(b) |
+| II.3 | BCP + tests + sécurité ICT | MAJOR | DORA 30.3(c) |
+| **II.4** | **Tests TLPT** | **CRITICAL** | DORA 30.3(d) |
+| II.5 | Monitoring continu | MAJOR | DORA 30.3(e) |
+| II.6 | Droits audit illimités | MAJOR | DORA 30.3(e)(i) |
+| II.7 | Assurance alternative (pooled) | MINOR | DORA 30.3(e)(ii) |
+| II.8 | Coopération audits | MAJOR | DORA 30.3(e)(iii) |
+| II.9 | Scope/fréquence audits | MINOR | DORA 30.3(e)(iv) |
+| **II.10** | **Transition OBLIGATOIRE** | **CRITICAL** | DORA 30.3(f) |
+
+### Section III : Spécificités EBA (3 exigences)
+
+| ID | Exigence | Criticité | Référence |
+|----|----------|-----------|-----------|
+| III.1 | Contrat écrit (EBA) | MAJOR | EBA GL 74 |
+| III.2 | Assurance obligatoire | MINOR | EBA GL 75k |
+| III.3 | Autorité de résolution | MINOR | EBA GL 75o |
+
+### Section IV : Spécificités françaises (12 exigences)
+*Base: Arrêté du 3 novembre 2014*
+
+| ID | Exigence | Criticité | Référence |
+|----|----------|-----------|-----------|
+| IV.1 | Définition activités | MINOR | Art. 10 q) |
+| IV.2 | Définition PSEE | MINOR | Art. 10 r) |
+| IV.3 | Agrément prestataire | MINOR | Art. 231 |
+| IV.4 | Responsabilité entité | MAJOR | Art. 237 |
+| IV.5 | Protection confidentialité | MAJOR | Art. 239 b) |
+| IV.6 | Mécanismes secours | MAJOR | Art. 239 c) |
+| IV.7 | Modification substantielle | MAJOR | Art. 239 d) |
+| IV.8 | Conformité procédures | MAJOR | Art. 239 e) |
+| IV.9 | Accès sur place | MAJOR | Art. 239 f) |
+| IV.10 | Notification événements | MAJOR | Art. 239 g) |
+| IV.11 | Accès ACPR | MAJOR | Art. 239 h) |
+| IV.12 | Engagement SLA | MAJOR | Art. 239 a) |
 
 ---
 
-## Statuts d'analyse
+## Scoring v3.1 : Pondération par criticité
 
-| Statut | Description |
-|--------|-------------|
-| ✅ `COMPLIANT` | Clause spécifique et détaillée présente |
-| ⚠️ `PARTIAL` | Clause existe mais incomplète ou vague |
-| 💡 `IMPLICIT` | Couvert par clause générale de conformité |
-| ❌ `ABSENT` | Aucune clause détectée |
-| ➖ `NA` | Non applicable au contrat |
+### Formule
+
+```
+Score = Σ(valeurStatut × coeffCriticité) / Σ(100 × coeffCriticité) × 100
+```
+
+### Coefficients
+
+| Criticité | Poids |
+|-----------|-------|
+| CRITICAL | 3 |
+| MAJOR | 2 |
+| MINOR | 1 |
+
+### Valeurs de statut
+
+| Statut | Valeur | Description |
+|--------|--------|-------------|
+| COMPLIANT | 100 | Clause spécifique et détaillée présente |
+| IMPLICIT | 70 | Couvert par clause générale de conformité |
+| PARTIAL | 30 | Clause existe mais incomplète ou vague |
+| ABSENT | 0 | Aucune clause détectée |
+| NA | - | Exclu du calcul |
+
+### Exigences CRITICAL
+
+Les 4 exigences suivantes **ne peuvent JAMAIS être IMPLICIT** :
+
+| ID | Exigence | Raison |
+|----|----------|--------|
+| I.7 | Assistance incident | DORA renforce EBA |
+| I.10 | Formation sécurité ICT | Nouveauté DORA |
+| II.4 | Tests TLPT | Nouveauté DORA |
+| II.10 | Transition OBLIGATOIRE | DORA renforce EBA |
+
+Si une clause générale existe mais pas de clause spécifique, ces exigences sont marquées **PARTIAL** avec un avertissement.
 
 ---
 
@@ -228,7 +268,7 @@ rawResult.recommendedClauses.forEach(clause => {
 | Paramètre | Valeur | Raison |
 |-----------|--------|--------|
 | **Temperature** | `0.0` | Output déterministe pour l'analyse de conformité |
-| **Max Output Tokens** | `16000` | Permet l'analyse détaillée + clauses de remédiation |
+| **Max Output Tokens** | `32000` | Analyse détaillée + clauses de remédiation |
 | **Timeout** | `120s` | Documents longs (~60 pages) |
 | **Max Input** | `120000` chars | ~60 pages de texte |
 
@@ -236,71 +276,15 @@ rawResult.recommendedClauses.forEach(clause => {
 
 | Provider | Modèle par défaut | Alternative |
 |----------|-------------------|-------------|
-| Anthropic | `claude-opus-4-5-20251101` | `claude-sonnet-4-5-20250929` |
+| Anthropic | `claude-sonnet-4-5-20250514` | `claude-opus-4-5-20251101` |
 | Google | `gemini-1.5-pro` | `gemini-2.0-flash` |
 | OpenAI | `gpt-4o` | `gpt-4-turbo` |
-
-### Types de streaming (v1.1.0)
-
-```typescript
-// Types d'événements disponibles
-type StreamEventType = 'start' | 'chunk' | 'progress' | 'complete' | 'error';
-
-// Événement de progression
-interface StreamEventProgress {
-  type: 'progress';
-  timestamp: number;
-  phase: 'parsing' | 'analyzing' | 'generating';
-  message: string;
-  percent?: number;
-}
-
-// Options de streaming
-interface StreamAnalyzeOptions {
-  provider: 'anthropic' | 'gemini' | 'openai';
-  apiKey: string;
-  model?: string;
-  fileName?: string;
-  onEvent?: (event: StreamEvent) => void;
-  includeRaw?: boolean;
-}
-```
-
-### Coût indicatif (Claude Opus 4.5)
-
-- **Input** : $5 / million tokens
-- **Output** : $25 / million tokens
-- **Estimation par contrat** : ~$0.50-2.00 selon la taille
-
-[Voir tarifs Anthropic](https://www.anthropic.com/pricing)
 
 ---
 
 ## Déploiement
 
-### Option 1: Supabase Edge Function
-
-```typescript
-// supabase/functions/analyze-ict-check/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { analyzeContract } from "./analyzer.ts";
-
-serve(async (req) => {
-  const { content, fileName } = await req.json();
-
-  const result = await analyzeContract(content, {
-    provider: 'anthropic',
-    apiKey: Deno.env.get('ANTHROPIC_API_KEY')!,
-    fileName
-  });
-
-  return new Response(JSON.stringify(result), {
-    headers: { 'Content-Type': 'application/json' }
-  });
-});
-```
-
-### Option 2: API Express/Node.js
+### Option 1: API Express/Node.js
 
 ```typescript
 import express from 'express';
@@ -325,7 +309,7 @@ app.post('/api/analyze', async (req, res) => {
 app.listen(3000);
 ```
 
-### Option 3: Avec persistance SQL (Optionnel)
+### Option 2: Avec persistance SQL (Optionnel)
 
 Un schéma SQL est disponible dans `sql/schema.sql` pour persister les analyses :
 
@@ -339,14 +323,9 @@ psql -d your_database -f sql/schema.sql
 | Table | Description |
 |-------|-------------|
 | `analyses` | Historique des analyses (score, date, provider) |
-| `findings` | Résultats par exigence (42 lignes par analyse) |
+| `findings` | Résultats par exigence (35 lignes par analyse) |
 | `recommended_clauses` | Clauses de remédiation FR/EN |
 | `contracts` | Métadonnées des contrats (optionnel) |
-
-**Vues utiles :**
-- `v_analysis_summary` : Résumé avec compteurs par statut
-- `v_common_gaps` : Exigences les plus souvent absentes
-- `v_provider_scores` : Score moyen par fournisseur
 
 ---
 
@@ -367,31 +346,11 @@ Les contributions sont les bienvenues ! Ce projet est sous licence AGPL-3.0 :
 - Les déploiements SaaS doivent rendre le code source disponible
 - Attribution requise
 
-```bash
-# Fork le repo
-git clone https://github.com/YOUR_USERNAME/ICT-contractuel-checks.git
-
-# Créer une branche
-git checkout -b feature/ma-contribution
-
-# Commit et push
-git commit -m "feat: description"
-git push origin feature/ma-contribution
-
-# Créer une Pull Request
-```
-
 ---
 
 ## Licence
 
 Ce projet est sous licence **AGPL-3.0** (GNU Affero General Public License v3.0).
-
-Cela signifie :
-- ✅ Utilisation libre pour usage personnel et commercial
-- ✅ Modification et distribution autorisées
-- ⚠️ Les modifications doivent être partagées sous AGPL-3.0
-- ⚠️ Les déploiements SaaS doivent fournir le code source aux utilisateurs
 
 [Voir le texte complet de la licence](LICENSE)
 
@@ -409,28 +368,42 @@ Cela signifie :
 
 ## Changelog
 
+### v2.0.0 (Janvier 2026)
+
+**Refonte majeure - Synchronisation avec regulatory-os source**
+
+**Checklist v3.0 :**
+- **35 exigences** restructurées en 4 sections (vs 42 avant)
+- Section I: Tous les contrats ICT (10) - DORA 30.1 + 30.2
+- Section II: Fonctions critiques (10) - DORA 30.3
+- Section III: Spécificités EBA (3)
+- Section IV: Spécificités françaises (12) - Arrêté 2014
+- Champ `applicability` : ALL, CRITICAL_FUNCTIONS, EBA_ONLY, FR_ONLY
+- Nouveaux flags : `isNewDORA`, `isDORAEnhanced`
+
+**Scoring v3.1 :**
+- Pondération par criticité (CRITICAL=3, MAJOR=2, MINOR=1)
+- 4 exigences CRITICAL ne pouvant pas être IMPLICIT (I.7, I.10, II.4, II.10)
+- Validation automatique avec conversion IMPLICIT → PARTIAL + avertissement
+
+**Améliorations techniques :**
+- Récupération de troncature JSON (parsing robuste)
+- Auto-génération de recommandations pour ABSENT/PARTIAL
+- Prompt v3.0 avec règles d'analyse détaillées
+- Types enrichis : Section, Applicability, RegulatoryText, Keywords
+- FindingFrontend enrichi : requirementId, section, criticality, reference
+
 ### v1.1.0 (Janvier 2026)
 
-**Nouvelles fonctionnalités :**
-- ✨ **Streaming en temps réel** : Nouvelles fonctions `analyzeContractStream()` et `analyzeContractStreamRaw()` pour suivre l'analyse en direct
-- 📡 **Événements de progression** : Types `StreamEvent` avec phases (analyzing, parsing, generating)
-- 🔧 **Types améliorés** : Export des types `StreamAnalyzeOptions`, `StreamCallback`, `AIProvider`
-- 📦 **Module exports** : Support des imports séparés (`./types`, `./checklist`)
-- 🗄️ **Schéma SQL optionnel** : `sql/schema.sql` pour persistance PostgreSQL/Supabase
-
-**Améliorations :**
-- Version standalone (aucune dépendance Supabase requise)
-- Support Node.js >= 18.0.0 (fetch natif)
-- Meilleure gestion des erreurs avec codes
-- Vues SQL pour reporting (`v_analysis_summary`, `v_common_gaps`)
+- Streaming en temps réel
+- Schéma SQL optionnel
+- Support Node.js >= 18.0.0
 
 ### v1.0.0 (Décembre 2025)
 
 - Version initiale
 - 42 exigences DORA/EBA/Arrêté 2014
 - Support Claude, Gemini, OpenAI
-- Détection clauses générales (IMPLICIT)
-- Génération clauses de remédiation FR/EN
 
 ---
 
