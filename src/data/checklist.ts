@@ -1,448 +1,659 @@
 /**
- * ICT Contract Compliance Checklist
+ * ICT Contract Compliance Checklist v3.0
  *
- * 42 requirements covering DORA Article 30, EBA Guidelines (EBA/GL/2019/02),
- * and French Arrêté du 3 novembre 2014.
+ * 35 requirements covering:
+ * - DORA Article 30 (Digital Operational Resilience Act)
+ * - EBA Guidelines (EBA/GL/2019/02)
+ * - French Arrêté du 3 novembre 2014 (ACPR)
+ *
+ * Structure:
+ * - Section I:   ALL contracts (10 requirements)
+ * - Section II:  Critical functions only (10 requirements)
+ * - Section III: EBA specificities (3 requirements)
+ * - Section IV:  French specificities (12 requirements)
  *
  * @license AGPL-3.0
  * @author Regulatory OS (https://regulatoryos.fr)
+ * @version 2.0.0
  */
 
 import { Requirement } from '../types';
 
 export const CHECKLIST: Requirement[] = [
   // =========================================================================
-  // SECTION A: GÉNÉRALITÉS DU CONTRAT
+  // SECTION I: TOUS LES CONTRATS ICT (10 exigences)
+  // Base: DORA Article 30.1 + 30.2 | EBA GL 74
   // =========================================================================
   {
-    id: 'A1',
-    section: 'A. Généralités',
+    id: 'I.1',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
     name: 'Contrat écrit unique',
-    reference: 'DORA 30.1 | ABE GL 74 | Arrêté 2014 Art. 238 b)',
-    description: 'Document unique écrit définissant clairement les droits et obligations.',
+    reference: 'DORA 30.1 | EBA GL 74 | FR Art.238b',
     criticality: 'MINOR',
-    keywords: ['contrat', 'agreement', 'document unique', 'rights and obligations', 'written'],
-    regulatoryText: 'The rights and obligations of the financial entity and of the ICT third-party service provider shall be clearly allocated and set out in writing. The full contract shall include the service level agreements and be documented in one written document.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "Les droits et obligations de l'entité financière et du prestataire tiers de services TIC sont définis clairement et consignés par écrit. L'intégralité du contrat comprend les accords de niveau de service et est consignée dans un document écrit unique.",
+      eba: "The rights and obligations of the institution and the service provider should be clearly allocated and set out in a written agreement.",
+      fr: "Donne lieu à un contrat écrit entre le prestataire externe et l'entreprise assujettie."
+    },
+    keywords: {
+      fr: ['contrat', 'convention', 'accord', 'document unique', 'écrit', 'droits', 'obligations'],
+      en: ['contract', 'agreement', 'written', 'single document', 'rights', 'obligations']
+    },
+    verificationCriteria: 'Document unique écrit (ou ensemble cohérent) définissant clairement droits/obligations + SLA intégrés'
   },
   {
-    id: 'A2',
-    section: 'A. Généralités',
-    name: 'Description des services',
-    reference: 'DORA 30.2(a) | ABE GL 75a',
-    description: 'Description claire et complète des fonctions et services ICT fournis.',
+    id: 'I.2',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Description des services TIC et gouvernance de la sous-traitance',
+    reference: 'DORA 30.2(a) | EBA GL 74, 75c-d',
     criticality: 'MAJOR',
-    keywords: ['description', 'services', 'functions', 'scope', 'périmètre', 'deliverables'],
-    regulatoryText: 'A clear and complete description of all functions and ICT services to be provided by the ICT third-party service provider, indicating whether subcontracting of an ICT service supporting a critical or important function, or material parts thereof, is permitted.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "Une description claire et exhaustive de tous les services TIC et fonctions qui seront fournis par le prestataire tiers de services TIC, indiquant si la sous-traitance d'un service TIC qui soutient une fonction critique ou importante est autorisée et les conditions applicables.",
+      eba: "Le contrat doit prévoir les conditions de sous-traitance, incluant notification préalable, droit d'opposition, visibilité sur la chaîne de sous-traitance, et maintien de la responsabilité du prestataire principal."
+    },
+    keywords: {
+      fr: ['description', 'services', 'prestations', 'périmètre', 'objet', 'fonctions', 'sous-traitance', 'autorisée', 'conditions', 'opposition', 'notification', 'chaîne', 'sous-traitants', 'responsabilité', 'sélection', 'critères', 'délai', 'préavis'],
+      en: ['description', 'services', 'scope', 'deliverables', 'functions', 'subcontracting', 'permitted', 'conditions', 'objection', 'notification', 'supply chain', 'subcontractors', 'liability', 'selection criteria', 'notice period']
+    },
+    verificationCriteria: 'Vérifier: (1) Description détaillée services TIC, (2) Autorisation/interdiction sous-traitance explicite, (3) Droit opposition client nouveaux sous-traitants avec délai notification préalable, (4) Visibilité chaîne complète sous-traitants, (5) Critères sélection sous-traitants, (6) Responsabilité résiduelle prestataire principal. PARTIEL si 1-3 éléments manquants, ABSENT si >3 manquants.',
+    notes: 'Évaluation graduée: COMPLIANT=6/6 éléments, PARTIAL=3-5 éléments, ABSENT=0-2 éléments. Le droit d\'opposition et la responsabilité résiduelle sont particulièrement surveillés par les régulateurs.'
   },
   {
-    id: 'A3',
-    section: 'A. Généralités',
-    name: 'Durée et préavis',
-    reference: 'ABE GL 75b',
-    description: 'Dates de début/fin et délais de préavis pour les deux parties.',
-    criticality: 'MINOR',
-    keywords: ['durée', 'term', 'duration', 'notice period', 'préavis', 'effective date'],
-    regulatoryText: 'The start date and end date, where applicable, of the agreement and the notice periods for the service provider and the institution or payment institution.'
-  },
-  {
-    id: 'A4',
-    section: 'A. Généralités',
-    name: 'Droit applicable',
-    reference: 'ABE GL 75c',
-    description: 'Loi régissant le contrat explicitement mentionnée.',
-    criticality: 'MINOR',
-    keywords: ['droit applicable', 'governing law', 'jurisdiction', 'loi applicable'],
-    regulatoryText: 'The governing law of the agreement.'
-  },
-  {
-    id: 'A5',
-    section: 'A. Généralités',
-    name: 'Obligations financières',
-    reference: 'ABE GL 75d',
-    description: 'Obligations financières clairement définies (prix, facturation).',
-    criticality: 'MINOR',
-    keywords: ['prix', 'fees', 'payment', 'paiement', 'remuneration', 'costs'],
-    regulatoryText: 'The parties\' financial obligations.'
-  },
-
-  // =========================================================================
-  // SECTION B: SOUS-TRAITANCE
-  // =========================================================================
-  {
-    id: 'B6',
-    section: 'B. Sous-traitance',
-    name: 'Autorisation sous-traitance',
-    reference: 'DORA 30.2(a) | ABE GL 75e, 76',
-    description: 'Mention explicite de l\'autorisation ou interdiction et conditions.',
+    id: 'I.3',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Localisation des services et données + notification de changement',
+    reference: 'DORA 30.2(b) | EBA GL 75f',
     criticality: 'MAJOR',
-    keywords: ['sous-traitance', 'subcontracting', 'sub-outsourcing', 'recours à des tiers'],
-    regulatoryText: 'Indicating whether subcontracting of an ICT service supporting a critical or important function, or material parts thereof, is permitted and, when that is the case, the conditions applying to such subcontracting.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "Les lieux, notamment les régions ou les pays, où les services TIC seront fournis et où les données seront traitées, y compris le lieu de stockage, et l'obligation pour le prestataire d'informer au préalable l'entité financière si celui-ci envisage de changer ces lieux."
+    },
+    keywords: {
+      fr: ['localisation', 'hébergement', 'pays', 'région', 'stockage', 'traitement', 'data center', 'notification', 'changement'],
+      en: ['location', 'country', 'region', 'data residency', 'storage', 'processing', 'data center', 'change notification']
+    },
+    verificationCriteria: 'Pays/régions de fourniture services ET de traitement/stockage données + obligation notification préalable tout changement'
   },
   {
-    id: 'B7',
-    section: 'B. Sous-traitance',
-    name: 'Activités exclues',
-    reference: 'ABE GL 78a',
-    description: 'Liste des activités ne pouvant être sous-traitées.',
-    criticality: 'MINOR',
-    keywords: ['activités exclues', 'excluded activities', 'prohibited', 'interdiction'],
-    regulatoryText: 'Specify any types of activities that are excluded from sub-outsourcing.'
-  },
-  {
-    id: 'B8',
-    section: 'B. Sous-traitance',
-    name: 'Conditions sous-traitance',
-    reference: 'ABE GL 78b',
-    description: 'Conditions que doivent respecter les sous-traitants.',
-    criticality: 'MINOR',
-    keywords: ['conditions', 'requirements', 'exigences'],
-    regulatoryText: 'Specify the conditions to be complied with in the case of sub-outsourcing.'
-  },
-  {
-    id: 'B9',
-    section: 'B. Sous-traitance',
-    name: 'Supervision sous-traitants',
-    reference: 'ABE GL 78c',
-    description: 'Obligation du prestataire de superviser ses sous-traitants.',
+    id: 'I.4',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Protection des données (Disponibilité, Authenticité, Intégrité, Confidentialité)',
+    reference: 'DORA 30.2(c) | EBA GL 75g, 82',
     criticality: 'MAJOR',
-    keywords: ['supervision', 'oversight', 'contrôle', 'monitoring', 'surveillance'],
-    regulatoryText: 'Specify that the service provider is obliged to oversee those services that it has subcontracted to ensure that all contractual obligations are continuously met.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "Des dispositions sur la disponibilité, l'authenticité, l'intégrité et la confidentialité en ce qui concerne la protection des données, y compris les données à caractère personnel."
+    },
+    keywords: {
+      fr: ['disponibilité', 'authenticité', 'intégrité', 'confidentialité', 'sécurité', 'protection', 'CIA', 'RGPD'],
+      en: ['availability', 'authenticity', 'integrity', 'confidentiality', 'security', 'protection', 'CIA triad', 'GDPR']
+    },
+    verificationCriteria: 'Clauses couvrant les 4 piliers : disponibilité + authenticité + intégrité + confidentialité'
   },
   {
-    id: 'B10',
-    section: 'B. Sous-traitance',
-    name: 'Notification préalable',
-    reference: 'DORA 30.3(b) | ABE GL 78d-e',
-    description: 'Notification préalable obligatoire avant changement de sous-traitant.',
+    id: 'I.5',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Accès, récupération et restitution des données',
+    reference: 'DORA 30.2(d) | EBA GL 75m',
     criticality: 'MAJOR',
-    keywords: ['notification', 'notice', 'inform', 'préalable', 'prior approval', 'changement'],
-    regulatoryText: 'Notice periods and reporting obligations... including notification of any development that might have a material impact... Inform the institution of any planned sub-outsourcing, or material changes thereof.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "Des dispositions sur la garantie de l'accès, de la récupération et de la restitution, dans un format facilement accessible, des données en cas d'insolvabilité, de résolution ou de cessation des activités du prestataire ou de résiliation des accords contractuels."
+    },
+    keywords: {
+      fr: ['restitution', 'récupération', 'portabilité', 'accès', 'format exploitable', 'insolvabilité', 'résiliation'],
+      en: ['data return', 'recovery', 'portability', 'data access', 'accessible format', 'insolvency', 'termination']
+    },
+    verificationCriteria: 'Droit accès + récupération + restitution données format exploitable en cas fin/insolvabilité prestataire'
   },
   {
-    id: 'B11',
-    section: 'B. Sous-traitance',
-    name: 'Résiliation (Sous-traitance)',
-    reference: 'ABE GL 78f',
-    description: 'Droit de résiliation en cas de sous-traitance non conforme.',
+    id: 'I.6',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Descriptions des niveaux de service (SLA) avec RTO/RPO',
+    reference: 'DORA 30.2(e) | EBA GL 75i | FR Art.239a',
     criticality: 'MAJOR',
-    keywords: ['résiliation', 'termination', 'undue sub-outsourcing', 'non-conforme'],
-    regulatoryText: 'Ensure that the institution has the contractual right to terminate the agreement in the case of undue sub-outsourcing.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "Des descriptions des niveaux de service, y compris leurs mises à jour et révisions.",
+      fr: "S'engagent sur un niveau de qualité répondant à un fonctionnement normal du service.",
+      eba: "Les niveaux de service doivent inclure des objectifs de reprise (RTO/RPO) et un processus de revue périodique."
+    },
+    keywords: {
+      fr: ['SLA', 'niveau de service', 'engagement', 'qualité', 'performance', 'disponibilité', 'KPI', 'RTO', 'RPO', 'temps de reprise', 'objectif de reprise', 'revue', 'révision', 'mise à jour'],
+      en: ['SLA', 'service level', 'service commitment', 'performance', 'availability', 'uptime', 'KPI', 'RTO', 'RPO', 'recovery time', 'recovery point', 'review', 'revision', 'update']
+    },
+    verificationCriteria: 'Vérifier: (1) SLA avec indicateurs quantitatifs/qualitatifs, (2) RTO (Recovery Time Objective) explicite, (3) RPO (Recovery Point Objective) explicite, (4) Métriques de performance détaillées, (5) Processus de revue périodique des SLA. PARTIEL si éléments 1 présent mais 2-5 manquants.',
+    notes: 'Un SLA sans RTO/RPO ni processus de revue est PARTIEL. La simple mention de disponibilité (99,5%) ne suffit pas - les objectifs de reprise doivent être explicites.'
   },
   {
-    id: 'B12',
-    section: 'B. Sous-traitance',
-    name: 'Engagements sous-traitant',
-    reference: 'ABE GL 79',
-    description: 'Sous-traitants doivent respecter lois/contrat et accorder droits d\'audit.',
-    criticality: 'MAJOR',
-    keywords: ['engagements', 'compliance', 'audit rights', 'accès', 'access'],
-    regulatoryText: 'Subcontractor undertakes to: a. comply with all applicable laws, regulatory requirements and contractual obligations; and b. grant the same contractual rights of access and audit.'
-  },
-
-  // =========================================================================
-  // SECTION C: LOCALISATION
-  // =========================================================================
-  {
-    id: 'C13',
-    section: 'C. Localisation',
-    name: 'Localisation données',
-    reference: 'DORA 30.2(b) | ABE GL 75f',
-    description: 'Pays/Régions de fourniture des services et stockage données.',
-    criticality: 'MAJOR',
-    keywords: ['localisation', 'location', 'country', 'pays', 'data center', 'storage'],
-    regulatoryText: 'The locations, namely the regions or countries, where the contracted or subcontracted functions and ICT services are to be provided and where data is to be processed, including the storage location.'
-  },
-  {
-    id: 'C14',
-    section: 'C. Localisation',
-    name: 'Notif. changement lieu',
-    reference: 'DORA 30.2(b) | ABE GL 75f',
-    description: 'Obligation de notifier tout changement de localisation.',
-    criticality: 'MAJOR',
-    keywords: ['notification', 'changement', 'change of location', 'transfer'],
-    regulatoryText: 'The requirement for the ICT third-party service provider to notify the financial entity in advance if it envisages changing such locations.'
-  },
-
-  // =========================================================================
-  // SECTION D: PROTECTION DES DONNÉES
-  // =========================================================================
-  {
-    id: 'D15',
-    section: 'D. Protection des Données',
-    name: 'Sécurité (CIA)',
-    reference: 'DORA 30.2(c) | ABE GL 75g',
-    description: 'Disponibilité, authenticité, intégrité et confidentialité.',
-    criticality: 'MAJOR',
-    keywords: ['availability', 'integrity', 'confidentiality', 'authenticity', 'sécurité', 'security'],
-    regulatoryText: 'Provisions on availability, authenticity, integrity and confidentiality in relation to the protection of data, including personal data.'
-  },
-  {
-    id: 'D16',
-    section: 'D. Protection des Données',
-    name: 'Approche par risques',
-    reference: 'ABE GL 83',
-    description: 'Approche basée sur les risques pour stockage/traitement.',
-    criticality: 'MINOR',
-    keywords: ['risk-based', 'risque', 'risk assessment', 'security measures'],
-    regulatoryText: 'Adopt a risk-based approach to data storage and data processing location(s) and information security considerations.'
-  },
-  {
-    id: 'D17',
-    section: 'D. Protection des Données',
-    name: 'RGPD & Secret Bancaire',
-    reference: 'ABE GL 84',
-    description: 'Conformité RGPD et respect secret bancaire/confidentialité.',
-    criticality: 'MAJOR',
-    keywords: ['rgpd', 'gdpr', 'personal data', 'secret bancaire', 'banking secrecy'],
-    regulatoryText: 'Complies with all legal requirements regarding the protection of data... e.g. the protection of personal data and that banking secrecy or similar legal confidentiality duties are observed.'
-  },
-  {
-    id: 'D18',
-    section: 'D. Protection des Données',
-    name: 'Accès et restitution',
-    reference: 'DORA 30.2(d) | ABE GL 75m',
-    description: 'Accès, récupération et restitution des données (insolvabilité/fin).',
-    criticality: 'MAJOR',
-    keywords: ['restitution', 'return', 'recovery', 'access', 'insolvency', 'insolvabilité'],
-    regulatoryText: 'Provisions on ensuring access, recovery and return in an easily accessible format of personal and non-personal data... in the event of the insolvency, resolution or discontinuation... or termination.'
-  },
-
-  // =========================================================================
-  // SECTION E: NIVEAUX DE SERVICE (SLA)
-  // =========================================================================
-  {
-    id: 'E19',
-    section: 'E. SLA',
-    name: 'Description SLA',
-    reference: 'DORA 30.2(e) | ABE GL 75i',
-    description: 'Niveaux de service avec indicateurs quantitatifs/qualitatifs.',
-    criticality: 'MAJOR',
-    keywords: ['sla', 'service level', 'niveau de service', 'kpi', 'performance'],
-    regulatoryText: 'Service level descriptions, including updates and revisions thereof.'
-  },
-  {
-    id: 'E20',
-    section: 'E. SLA',
-    name: 'SLA Détaillés (Critique)',
-    reference: 'DORA 30.3(a)',
-    description: 'Objectifs précis, monitoring et actions correctives (Fonctions Critiques).',
-    criticality: 'MAJOR',
-    keywords: ['targets', 'objectifs', 'corrective actions', 'actions correctives', 'penalty', 'pénalités'],
-    regulatoryText: 'Precise quantitative and qualitative performance targets within the agreed service levels to allow effective monitoring... and enable appropriate corrective actions to be taken.'
-  },
-
-  // =========================================================================
-  // SECTION F: GESTION DES INCIDENTS
-  // =========================================================================
-  {
-    id: 'F21',
-    section: 'F. Incidents',
-    name: 'Assistance Incident (Coût)',
+    id: 'I.7',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Assistance en cas d\'incident ICT (sans frais ou coût prédéterminé)',
     reference: 'DORA 30.2(f)',
-    description: 'Assistance incident sans frais ou à coût prédéterminé.',
     criticality: 'CRITICAL',
-    keywords: ['assistance', 'no additional cost', 'sans frais', 'predetermined cost', 'coût prédéterminé'],
-    regulatoryText: 'The obligation... to provide assistance to the financial entity at no additional cost, or at a cost that is determined ex-ante, when an ICT incident... occurs.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "L'obligation pour le prestataire tiers de services TIC de fournir à l'entité financière, sans frais supplémentaires ou à un coût déterminé ex ante, une assistance en cas d'incident lié aux TIC."
+    },
+    keywords: {
+      fr: ['assistance', 'incident', 'sans frais', 'supplémentaires', 'coût', 'prédéterminé', 'ex ante', 'support'],
+      en: ['assistance', 'incident', 'no additional cost', 'predetermined cost', 'ex-ante', 'support']
+    },
+    verificationCriteria: 'Obligation assistance incident ICT + coût SOIT nul SOIT prédéterminé (pas "raisonnable" ou variable)',
+    notes: 'CRITICAL: DORA renforce EBA. Vérifier coût explicitement "0" ou "prédéfini". Formulations vagues insuffisantes.',
+    isDORAEnhanced: true
   },
   {
-    id: 'F22',
-    section: 'F. Incidents',
-    name: 'Notification Incidents',
-    reference: 'DORA 30.3(b) | ABE GL 75j',
-    description: 'Notification des incidents et développements matériels.',
+    id: 'I.8',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Coopération avec les autorités compétentes et de résolution',
+    reference: 'DORA 30.2(g) | EBA GL 75n | FR Art.239h',
     criticality: 'MAJOR',
-    keywords: ['notification', 'incident', 'reporting', 'impact', 'material event'],
-    regulatoryText: 'Reporting obligations... including notification of any development that might have a material impact on the ICT third-party service provider\'s ability to effectively provide the ICT services.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "L'obligation pour le prestataire tiers de services TIC de coopérer pleinement avec les autorités compétentes et les autorités de résolution de l'entité financière.",
+      fr: "Acceptent que l'ACPR ou toute autre autorité étrangère équivalente ait accès aux informations sur les activités externalisées."
+    },
+    keywords: {
+      fr: ['autorité', 'compétente', 'ACPR', 'AMF', 'régulateur', 'résolution', 'coopération', 'accès'],
+      en: ['competent authority', 'regulator', 'supervisory', 'resolution authority', 'cooperation']
+    },
+    verificationCriteria: 'Obligation coopérer avec (a) autorités compétentes, (b) autorités résolution, (c) représentants'
   },
   {
-    id: 'F23',
-    section: 'F. Incidents',
-    name: 'Continuité (BCP)',
-    reference: 'DORA 30.3(c) | ABE GL 75l',
-    description: 'Mise en œuvre et tests du plan de continuité (BCP).',
-    criticality: 'MAJOR',
-    keywords: ['bcp', 'pca', 'continuity', 'continuité', 'disaster recovery', 'secours', 'test'],
-    regulatoryText: 'Requirements for the ICT third-party service provider to implement and test business contingency plans and to have in place ICT security measures.'
-  },
-
-  // =========================================================================
-  // SECTION G: COOPÉRATION AUTORITÉS
-  // =========================================================================
-  {
-    id: 'G24',
-    section: 'G. Autorités',
-    name: 'Coopération Autorités',
-    reference: 'DORA 30.2(g) | ABE GL 75n',
-    description: 'Coopération avec autorités compétentes et de résolution.',
-    criticality: 'MAJOR',
-    keywords: ['cooperation', 'coopération', 'competent authority', 'autorité compétente', 'acpr', 'regulator'],
-    regulatoryText: 'The obligation... to fully cooperate with the competent authorities and the resolution authorities of the financial entity, including persons appointed by them.'
-  },
-
-  // =========================================================================
-  // SECTION H: RÉSILIATION ET SORTIE
-  // =========================================================================
-  {
-    id: 'H25',
-    section: 'H. Sortie & Résiliation',
+    id: 'I.9',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
     name: 'Droits de résiliation',
-    reference: 'DORA 30.2(h) | ABE GL 75q',
-    description: 'Droits de résiliation incluant manquement et changements matériels.',
+    reference: 'DORA 30.2(h) | DORA 28.7 | EBA GL 75q, 98 | FR Art.238d',
     criticality: 'MAJOR',
-    keywords: ['termination', 'résiliation', 'breach', 'rights', 'droit'],
-    regulatoryText: 'Termination rights and related minimum notice periods... in accordance with the expectations of competent authorities.'
+    applicability: 'ALL',
+    regulatoryText: {
+      dora: "Les droits de résiliation et les délais de préavis minimaux correspondants pour la résiliation des accords contractuels, conformément aux attentes des autorités compétentes."
+    },
+    keywords: {
+      fr: ['résiliation', 'rupture', 'fin', 'contrat', 'préavis', 'droit', 'résilier', 'manquement'],
+      en: ['termination', 'exit', 'notice period', 'right to terminate', 'breach', 'material changes']
+    },
+    verificationCriteria: 'Droits résiliation incluant (a) manquement, (b) changements matériels, (c) faiblesses risque TIC, (d) instruction autorités'
   },
   {
-    id: 'H26',
-    section: 'H. Sortie & Résiliation',
-    name: 'Transition Obligatoire',
-    reference: 'DORA 30.3(f)(i)',
-    description: 'Période de transition OBLIGATOIRE et assistance migration.',
-    criticality: 'CRITICAL',
-    keywords: ['transition', 'mandatory', 'obligatoire', 'adequate', 'transition'],
-    regulatoryText: 'Establishment of a mandatory adequate transition period... during which the ICT third-party service provider will continue providing the respective functions.'
-  },
-
-  // =========================================================================
-  // SECTION I: AUDIT ET MONITORING
-  // =========================================================================
-  {
-    id: 'I27',
-    section: 'I. Audit',
-    name: 'Monitoring continu',
-    reference: 'DORA 30.3(e) | ABE GL 75h',
-    description: 'Droit de monitoring continu de la performance.',
-    criticality: 'MAJOR',
-    keywords: ['monitor', 'surveillance', 'contrôle', 'performance', 'ongoing'],
-    regulatoryText: 'The right to monitor, on an ongoing basis, the ICT third-party service provider\'s performance.'
-  },
-  {
-    id: 'I28',
-    section: 'I. Audit',
-    name: 'Droits d\'Audit/Accès',
-    reference: 'DORA 30.3(e)(i) | ABE GL 87',
-    description: 'Droits d\'accès, inspection et audit sans restriction.',
-    criticality: 'MAJOR',
-    keywords: ['audit', 'inspection', 'access', 'accès', 'unrestricted', 'sans restriction'],
-    regulatoryText: 'Unrestricted rights of access, inspection and audit by the financial entity... and by the competent authority.'
-  },
-  {
-    id: 'I29',
-    section: 'I. Audit',
-    name: 'Assurance Alternative',
-    reference: 'DORA 30.3(e)(ii) | ABE GL 91',
-    description: 'Possibilité de niveaux d\'assurance alternatifs (certifs, audits mutualisés).',
-    criticality: 'MINOR',
-    keywords: ['alternative', 'pooled audit', 'audit mutualisé', 'certification', 'report'],
-    regulatoryText: 'The right to agree on alternative assurance levels if other clients\' rights are affected.'
-  },
-  {
-    id: 'I30',
-    section: 'I. Audit',
-    name: 'Coopération Audit',
-    reference: 'DORA 30.3(e)(iii) | ABE GL 95',
-    description: 'Obligation de coopérer pleinement lors des audits.',
-    criticality: 'MAJOR',
-    keywords: ['cooperation', 'coopération', 'audit', 'inspection', 'facilitate'],
-    regulatoryText: 'The obligation... to fully cooperate during the on-site inspections and audits.'
-  },
-  {
-    id: 'I31',
-    section: 'I. Audit',
-    name: 'Détails Audit',
-    reference: 'DORA 30.3(e)(iv) | ABE GL 90',
-    description: 'Détails sur scope, procédures et fréquence des audits.',
-    criticality: 'MINOR',
-    keywords: ['scope', 'frequency', 'fréquence', 'procedure', 'périmètre'],
-    regulatoryText: 'The obligation to provide details on the scope, procedures to be followed and frequency of such inspections and audits.'
-  },
-
-  // =========================================================================
-  // SECTION J: NOUVEAUTÉS DORA CRITIQUES
-  // =========================================================================
-  {
-    id: 'J32',
-    section: 'J. Nouveautés DORA',
-    name: 'Formation Sécurité ICT',
+    id: 'I.10',
+    section: 'I',
+    sectionName: 'Tous les contrats ICT',
+    name: 'Participation aux programmes de formation sécurité ICT',
     reference: 'DORA 30.2(i)',
-    description: 'Participation du prestataire aux programmes de formation sécurité.',
     criticality: 'CRITICAL',
-    keywords: ['training', 'formation', 'awareness', 'sensibilisation', 'programmes'],
-    regulatoryText: 'The conditions for the participation of ICT third-party service providers in the financial entities\' ICT security awareness programmes and digital operational resilience training.'
-  },
-  {
-    id: 'J33',
-    section: 'J. Nouveautés DORA',
-    name: 'Tests TLPT',
-    reference: 'DORA 30.3(d)',
-    description: 'Participation aux tests de pénétration fondés sur la menace.',
-    criticality: 'CRITICAL',
-    keywords: ['tlpt', 'penetration testing', 'test d\'intrusion', 'red team', 'menace'],
-    regulatoryText: 'The obligation... to participate and fully cooperate in the financial entity\'s TLPT as referred to in Articles 26 and 27.'
-  },
-  {
-    id: 'J34',
-    section: 'J. Nouveautés DORA',
-    name: 'Transition Obligatoire',
-    reference: 'DORA 30.3(f)(i)',
-    description: 'Caractère explicitement OBLIGATOIRE de la transition.',
-    criticality: 'CRITICAL',
-    keywords: ['mandatory', 'obligatoire', 'adequate', 'transition'],
-    regulatoryText: 'Establishment of a mandatory adequate transition period.'
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "Les conditions de participation des prestataires tiers de services TIC aux programmes de sensibilisation à la sécurité des TIC et aux formations à la résilience opérationnelle numérique."
+    },
+    keywords: {
+      fr: ['formation', 'sensibilisation', 'programme', 'sécurité', 'ICT', 'résilience', 'training'],
+      en: ['training', 'awareness', 'programme', 'ICT security', 'resilience', 'education']
+    },
+    verificationCriteria: 'Clause prévoyant (a) participation prestataire aux formations sécurité, (b) conditions participation (fréquence, format)',
+    notes: 'CRITICAL: Nouveauté DORA Art. 30.3 scope - applicable uniquement aux fonctions critiques',
+    isNewDORA: true
   },
 
   // =========================================================================
-  // SECTION K: SPÉCIFICITÉS FR (Arrêté 2014)
+  // SECTION II: FONCTIONS CRITIQUES ADDITIONNELLES (10 exigences)
+  // Base: DORA Article 30.3 | EBA GL 75
+  // Applicabilité: UNIQUEMENT pour services TIC soutenant fonctions critiques
   // =========================================================================
   {
-    id: 'K35',
-    section: 'K. Spécificités FR',
-    name: 'Définition Activités',
+    id: 'II.1',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'SLA détaillés avec objectifs précis et actions correctives',
+    reference: 'DORA 30.3(a) | EBA GL 75i',
+    criticality: 'MAJOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "Des descriptions complètes des niveaux de service, assorties d'objectifs de performance quantitatifs et qualitatifs précis, afin de permettre un suivi efficace et de prendre des mesures correctives appropriées lorsque les niveaux de service ne sont pas atteints."
+    },
+    keywords: {
+      fr: ['objectifs', 'performance', 'KPI', 'seuils', 'mesures correctives', 'actions', 'pénalités', 'service credits'],
+      en: ['performance targets', 'KPIs', 'thresholds', 'corrective actions', 'remediation', 'penalties']
+    },
+    verificationCriteria: 'SLA avec (a) objectifs quantitatifs/qualitatifs PRÉCIS, (b) processus monitoring, (c) actions correctives si non-atteinte'
+  },
+  {
+    id: 'II.2',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Notification des incidents et développements matériels',
+    reference: 'DORA 30.3(b) | EBA GL 75j | FR Art.239g',
+    criticality: 'MAJOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "Les obligations de notification du prestataire incluant la notification de tout développement susceptible d'avoir une incidence significative sur la capacité à fournir les services TIC.",
+      fr: "Les informent de tout événement susceptible d'avoir un impact sensible sur leur capacité à exercer les tâches externalisées."
+    },
+    keywords: {
+      fr: ['notification', 'incident', 'événement', 'impact sensible', 'reporting', 'alerte', 'développement'],
+      en: ['notification', 'incident', 'material event', 'significant impact', 'reporting', 'alert']
+    },
+    verificationCriteria: 'Obligation notifier (a) incidents TIC, (b) développements impactant capacité fournir service conformément SLA'
+  },
+  {
+    id: 'II.3',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Plan de continuité (BCP) + tests + mesures sécurité ICT',
+    reference: 'DORA 30.3(c) | EBA GL 75l | FR Art.239c',
+    criticality: 'MAJOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "L'obligation pour le prestataire de mettre en œuvre et de tester des plans d'urgence et de mettre en place des mesures de sécurité des TIC appropriées.",
+      fr: "Mettent en œuvre des mécanismes de secours en cas de difficulté grave affectant la continuité du service."
+    },
+    keywords: {
+      fr: ['BCP', 'PCA', 'PRA', 'continuité', 'reprise activité', 'plan secours', 'disaster recovery', 'tests'],
+      en: ['BCP', 'DRP', 'business continuity', 'disaster recovery', 'contingency plan', 'testing']
+    },
+    verificationCriteria: '(a) Obligation BCP/DRP prestataire, (b) tests réguliers obligatoires, (c) mesures sécurité ICT appropriées'
+  },
+  {
+    id: 'II.4',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Participation aux tests de pénétration TLPT',
+    reference: 'DORA 30.3(d)',
+    criticality: 'CRITICAL',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "L'obligation pour le prestataire de participer et de coopérer pleinement au test de pénétration fondé sur la menace (TLPT) effectué par l'entité financière visé aux articles 26 et 27."
+    },
+    keywords: {
+      fr: ['TLPT', 'test pénétration', 'pentest', 'test intrusion', 'threat-led', 'red team'],
+      en: ['TLPT', 'penetration testing', 'pentest', 'threat-led', 'red team', 'intrusion test']
+    },
+    verificationCriteria: 'Clause prévoyant (a) obligation participation TLPT, (b) coopération pleine prestataire (accès systèmes, infos techniques)',
+    notes: 'CRITICAL: Nouveauté DORA - ne peut PAS être couvert par clause générale conformité EBA',
+    isNewDORA: true
+  },
+  {
+    id: 'II.5',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Droit de monitoring continu des performances',
+    reference: 'DORA 30.3(e) | EBA GL 75h | FR Art.239e',
+    criticality: 'MAJOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "Le droit d'assurer un suivi permanent des performances du prestataire tiers de services TIC."
+    },
+    keywords: {
+      fr: ['monitoring', 'suivi', 'contrôle', 'surveillance', 'performance', 'supervision continue'],
+      en: ['monitoring', 'ongoing supervision', 'oversight', 'performance review', 'continuous']
+    },
+    verificationCriteria: 'Droit monitoring continu performance prestataire (voir détails II.6 à II.9)'
+  },
+  {
+    id: 'II.6',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Droits d\'accès, d\'inspection et d\'audit illimités',
+    reference: 'DORA 30.3(e)(i) | EBA GL 75p, 87 | FR Art.239f',
+    criticality: 'MAJOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "Les droits illimités d'accès, d'inspection et d'audit par l'entité financière ou par une tierce partie désignée, dont l'exercice effectif n'est pas entravé par d'autres accords contractuels.",
+      fr: "Leur permettent, chaque fois que cela est nécessaire, l'accès sur place à toute information sur les services mis à leur disposition."
+    },
+    keywords: {
+      fr: ['audit', 'inspection', 'accès', 'droits illimités', 'unrestricted', 'sans restriction', 'sur place'],
+      en: ['audit rights', 'inspection', 'access', 'unrestricted', 'unlimited', 'on-site', 'unimpeded']
+    },
+    verificationCriteria: 'Droits (a) accès, (b) inspection, (c) audit - ILLIMITÉS et SANS RESTRICTION par autres clauses'
+  },
+  {
+    id: 'II.7',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Niveaux d\'assurance alternatifs (pooled audit)',
+    reference: 'DORA 30.3(e)(ii) | EBA GL 91',
+    criticality: 'MINOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "Le droit de convenir d'autres niveaux d'assurance si les droits d'autres clients sont affectés.",
+      eba: "Institutions may use: pooled audits organised jointly with other clients; third-party certifications and audit reports."
+    },
+    keywords: {
+      fr: ['audit mutualisé', 'audit groupé', 'certification tierce', 'rapport audit', 'assurance alternative'],
+      en: ['pooled audit', 'joint audit', 'third-party certification', 'audit report', 'alternative assurance']
+    },
+    verificationCriteria: 'Possibilité niveaux assurance alternatifs (certifications, audits mutualisés) si droits autres clients affectés'
+  },
+  {
+    id: 'II.8',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Coopération lors des inspections et audits',
+    reference: 'DORA 30.3(e)(iii) | EBA GL 95',
+    criticality: 'MAJOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "L'obligation pour le prestataire de coopérer pleinement lors des inspections sur place et des audits effectués par les autorités compétentes, l'entité financière ou une tierce partie."
+    },
+    keywords: {
+      fr: ['coopération', 'facilitation', 'accompagnement', 'assistance audit', 'préavis'],
+      en: ['cooperation', 'facilitation', 'escort', 'assist', 'audit notice']
+    },
+    verificationCriteria: 'Obligation coopération pleine lors audits/inspections (entité + autorités + tiers désignés)'
+  },
+  {
+    id: 'II.9',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Détails sur le scope et la fréquence des audits',
+    reference: 'DORA 30.3(e)(iv) | EBA GL 90',
+    criticality: 'MINOR',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "L'obligation de fournir des précisions sur la portée, les procédures à suivre et la fréquence de ces inspections et audits."
+    },
+    keywords: {
+      fr: ['périmètre audit', 'fréquence', 'procédures', 'programme audit', 'planning'],
+      en: ['audit scope', 'frequency', 'procedures', 'audit program', 'schedule']
+    },
+    verificationCriteria: 'Détails sur (a) périmètre audits, (b) procédures, (c) fréquence'
+  },
+  {
+    id: 'II.10',
+    section: 'II',
+    sectionName: 'Fonctions critiques additionnelles',
+    name: 'Stratégie de sortie avec période de transition OBLIGATOIRE',
+    reference: 'DORA 30.3(f) | EBA GL 99, 106-108',
+    criticality: 'CRITICAL',
+    applicability: 'CRITICAL_FUNCTIONS',
+    regulatoryText: {
+      dora: "Les stratégies de sortie, en particulier la fixation d'une période de transition adéquate OBLIGATOIRE : (i) au cours de laquelle le prestataire continuera à fournir les services, (ii) qui permet à l'entité de migrer vers un autre prestataire ou des solutions internes."
+    },
+    keywords: {
+      fr: ['stratégie', 'sortie', 'exit', 'transition', 'OBLIGATOIRE', 'mandatory', 'réversibilité', 'migration'],
+      en: ['exit strategy', 'mandatory transition', 'compulsory', 'reversibility', 'migration', 'handover']
+    },
+    verificationCriteria: '(a) Période transition explicitement OBLIGATOIRE (pas optionnelle), (b) assistance migration, (c) continuité services pendant transition',
+    notes: 'CRITICAL: DORA renforce EBA (mandatory vs recommended). Termes insuffisants = "may continue", "if requested" - doit être MANDATORY',
+    isDORAEnhanced: true
+  },
+
+  // =========================================================================
+  // SECTION III: SPÉCIFICITÉS EBA (3 exigences non reprises par DORA)
+  // Base: EBA GL 2019/02
+  // =========================================================================
+  {
+    id: 'III.1',
+    section: 'III',
+    sectionName: 'Spécificités EBA',
+    name: 'Contrat écrit (principe général EBA GL 74)',
+    reference: 'EBA GL 74',
+    criticality: 'MAJOR',
+    applicability: 'EBA_ONLY',
+    regulatoryText: {
+      eba: "The rights and obligations of the institution and the service provider should be clearly allocated and set out in a written agreement."
+    },
+    keywords: {
+      fr: ['contrat', 'écrit', 'accord', 'droits', 'obligations'],
+      en: ['written', 'agreement', 'rights', 'obligations', 'contract']
+    },
+    verificationCriteria: 'Accord écrit clair définissant droits/obligations (souvent déjà couvert par I.1)'
+  },
+  {
+    id: 'III.2',
+    section: 'III',
+    sectionName: 'Spécificités EBA',
+    name: 'Assurance obligatoire contre certains risques',
+    reference: 'EBA GL 75k',
+    criticality: 'MINOR',
+    applicability: 'EBA_ONLY',
+    regulatoryText: {
+      eba: "Whether the service provider should take mandatory insurance against certain risks (e.g. professional indemnity insurance)."
+    },
+    keywords: {
+      fr: ['assurance', 'insurance', 'responsabilité professionnelle', 'indemnité', 'couverture'],
+      en: ['insurance', 'professional indemnity', 'liability coverage', 'mandatory']
+    },
+    verificationCriteria: 'Mention si prestataire doit souscrire assurance obligatoire (responsabilité professionnelle, cyber, etc.)'
+  },
+  {
+    id: 'III.3',
+    section: 'III',
+    sectionName: 'Spécificités EBA',
+    name: 'Référence autorité de résolution nationale',
+    reference: 'EBA GL 75o',
+    criticality: 'MINOR',
+    applicability: 'EBA_ONLY',
+    regulatoryText: {
+      eba: "A clear reference to the national resolution authority's power to exercise the rights to access, inspect and audit."
+    },
+    keywords: {
+      fr: ['autorité résolution', 'pouvoir', 'modification contrat', 'Single Resolution Board'],
+      en: ['resolution authority', 'power', 'amend agreement', 'SRB']
+    },
+    verificationCriteria: 'Référence explicite pouvoirs autorité résolution nationale (accès, audit, modification contrat)'
+  },
+
+  // =========================================================================
+  // SECTION IV: SPÉCIFICITÉS FRANÇAISES - Arrêté du 3 novembre 2014 (12 exigences)
+  // Base: Arrêté ACPR France
+  // =========================================================================
+  {
+    id: 'IV.1',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Définition des activités externalisées',
     reference: 'Arrêté 2014 Art. 10 q)',
-    description: 'Qualification correcte des activités externalisées.',
     criticality: 'MINOR',
-    keywords: ['activité externalisée', 'outsourced activity', 'definition'],
-    regulatoryText: 'Activités pour lesquelles l\'entreprise assujettie confie à un tiers... la réalisation de prestations.'
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Activités externalisées : les activités pour lesquelles l'entreprise assujettie confie à un tiers, de manière durable et à titre habituel, la réalisation de prestations de services ou d'autres tâches opérationnelles essentielles ou importantes."
+    },
+    keywords: {
+      fr: ['activités externalisées', 'durable', 'habituel', 'sous-traitance'],
+      en: ['outsourced activities', 'ongoing', 'regular', 'subcontracting']
+    },
+    verificationCriteria: 'Vérifier que contrat qualifie correctement activités selon définition française (durable + habituel)'
   },
   {
-    id: 'K36',
-    section: 'K. Spécificités FR',
-    name: 'Prestations Essentielles',
+    id: 'IV.2',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Définition des prestations essentielles ou importantes (PSEE)',
     reference: 'Arrêté 2014 Art. 10 r)',
-    description: 'Qualification PSEE (Prestation Essentielle ou Importante).',
     criticality: 'MINOR',
-    keywords: ['essentielle', 'importante', 'critical', 'important', 'psee'],
-    regulatoryText: 'Prestation de services... lorsqu\'une anomalie... est susceptible de nuire sérieusement.'
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Prestation de services essentielles ou importantes : les opérations de banque, services de paiement, services d'investissement, ou toute prestation dont une anomalie ou défaillance est susceptible de nuire sérieusement."
+    },
+    keywords: {
+      fr: ['PSEE', 'essentiel', 'important', 'critique', 'anomalie', 'défaillance'],
+      en: ['essential', 'important', 'critical', 'failure', 'deficiency']
+    },
+    verificationCriteria: 'Qualification correcte caractère essentiel/important selon critères français'
   },
   {
-    id: 'K37',
-    section: 'K. Spécificités FR',
-    name: 'Agrément Prestataire',
+    id: 'IV.3',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Agrément ou habilitation du prestataire',
     reference: 'Arrêté 2014 Art. 231',
-    description: 'Vérification de l\'agrément/habilitation du prestataire si requis.',
     criticality: 'MINOR',
-    keywords: ['agrément', 'habilitation', 'licence', 'authorized', 'agréé'],
-    regulatoryText: 'N\'est externalisée qu\'auprès de personnes agréées ou habilitées.'
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Les entreprises assujetties s'assurent que toute prestation qui concourt de façon substantielle à la décision engageant l'entreprise n'est externalisée qu'auprès de personnes agréées ou habilitées."
+    },
+    keywords: {
+      fr: ['agrément', 'habilitation', 'autorisation', 'licence', 'enregistrement'],
+      en: ['authorization', 'license', 'approval', 'registration']
+    },
+    verificationCriteria: 'Vérification/mention agrément prestataire pour activités concernées'
   },
   {
-    id: 'K40',
-    section: 'K. Spécificités FR',
-    name: 'Responsabilité Entité',
+    id: 'IV.4',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Maintien de la responsabilité de l\'entité',
     reference: 'Arrêté 2014 Art. 237',
-    description: 'Maintien de la pleine responsabilité de l\'entité régulée.',
     criticality: 'MAJOR',
-    keywords: ['responsabilité', 'responsibility', 'retain', 'demeure responsable'],
-    regulatoryText: 'Demeurent pleinement responsables du respect de toutes les obligations.'
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Les entreprises assujetties qui externalisent des PSEE demeurent pleinement responsables du respect de toutes les obligations qui leur incombent. L'externalisation n'entraîne aucune délégation de la responsabilité des dirigeants effectifs."
+    },
+    keywords: {
+      fr: ['responsabilité', 'délégation', 'dirigeants', 'non-transfert', 'expertise'],
+      en: ['responsibility', 'delegation', 'non-transfer', 'retain', 'accountability']
+    },
+    verificationCriteria: 'Vérifier que contrat ne transfère PAS responsabilité réglementaire entité + maintien expertise interne'
   },
   {
-    id: 'K42',
-    section: 'K. Spécificités FR',
-    name: 'Modif. Substantielle',
-    reference: 'Arrêté 2014 Art. 239 d)',
-    description: 'Accord préalable requis pour modification substantielle.',
+    id: 'IV.5',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Protection des informations confidentielles',
+    reference: 'Arrêté 2014 Art. 239 b)',
     criticality: 'MAJOR',
-    keywords: ['modification', 'changement', 'accord préalable', 'prior approval', 'substantial'],
-    regulatoryText: 'Ne peuvent imposer une modification substantielle de la prestation... sans l\'accord préalable.'
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Assurent la protection des informations confidentielles ayant trait à l'entreprise assujettie et à ses clients."
+    },
+    keywords: {
+      fr: ['confidentialité', 'protection informations', 'secret', 'données clients'],
+      en: ['confidentiality', 'information protection', 'secrecy', 'client data']
+    },
+    verificationCriteria: 'Clause protection informations confidentielles entreprise + clients'
+  },
+  {
+    id: 'IV.6',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Mécanismes de secours (BCP)',
+    reference: 'Arrêté 2014 Art. 239 c)',
+    criticality: 'MAJOR',
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Mettent en œuvre des mécanismes de secours en cas de difficulté grave affectant la continuité du service. À défaut, les entreprises s'assurent que leur plan d'urgence tient compte de l'impossibilité pour le prestataire d'assurer sa prestation."
+    },
+    keywords: {
+      fr: ['mécanismes secours', 'BCP', 'PCA', 'continuité', 'plan urgence'],
+      en: ['contingency', 'BCP', 'continuity', 'emergency plan']
+    },
+    verificationCriteria: 'BCP prestataire OU plan entité couvrant défaillance prestataire'
+  },
+  {
+    id: 'IV.7',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Interdiction modification substantielle sans accord',
+    reference: 'Arrêté 2014 Art. 239 d)',
+    criticality: 'MAJOR',
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Ne peuvent imposer une modification substantielle de la prestation qu'ils assurent sans l'accord préalable de l'entreprise assujettie."
+    },
+    keywords: {
+      fr: ['modification', 'changement', 'accord préalable', 'substantiel'],
+      en: ['modification', 'change', 'prior approval', 'consent', 'substantial']
+    },
+    verificationCriteria: 'Accord préalable requis pour toute modification substantielle services'
+  },
+  {
+    id: 'IV.8',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Conformité aux procédures de contrôle',
+    reference: 'Arrêté 2014 Art. 239 e)',
+    criticality: 'MAJOR',
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Se conforment aux procédures définies par l'entreprise assujettie concernant l'organisation et la mise en œuvre du contrôle des services qu'ils fournissent."
+    },
+    keywords: {
+      fr: ['procédures', 'contrôle', 'conformité', 'respect'],
+      en: ['procedures', 'control', 'compliance', 'comply', 'adhere']
+    },
+    verificationCriteria: 'Obligation prestataire se conformer aux procédures contrôle définies par entité'
+  },
+  {
+    id: 'IV.9',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Accès aux informations (y compris sur place)',
+    reference: 'Arrêté 2014 Art. 239 f)',
+    criticality: 'MAJOR',
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Leur permettent, chaque fois que cela est nécessaire, l'accès, le cas échéant, sur place, à toute information sur les services mis à leur disposition."
+    },
+    keywords: {
+      fr: ['accès', 'informations', 'sur place', 'visite'],
+      en: ['access', 'information', 'on-site', 'visit']
+    },
+    verificationCriteria: 'Droit accès infos (y compris sur place)'
+  },
+  {
+    id: 'IV.10',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Information sur événements impactant la capacité',
+    reference: 'Arrêté 2014 Art. 239 g)',
+    criticality: 'MAJOR',
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Les informent de tout événement susceptible d'avoir un impact sensible sur leur capacité à exercer les tâches externalisées de manière efficace et conforme."
+    },
+    keywords: {
+      fr: ['événement', 'impact', 'notification', 'capacité'],
+      en: ['event', 'impact', 'notification', 'capacity']
+    },
+    verificationCriteria: 'Notification événements impactant capacité'
+  },
+  {
+    id: 'IV.11',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Accès ACPR (autorité compétente)',
+    reference: 'Arrêté 2014 Art. 239 h)',
+    criticality: 'MAJOR',
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "Acceptent que l'Autorité de contrôle prudentiel et de résolution ou toute autre autorité étrangère équivalente ait accès aux informations sur les activités externalisées nécessaires à l'exercice de sa mission, y compris sur place."
+    },
+    keywords: {
+      fr: ['ACPR', 'autorité', 'accès', 'sur place', 'mission'],
+      en: ['ACPR', 'authority', 'access', 'on-site', 'supervision']
+    },
+    verificationCriteria: 'Accès ACPR aux informations (y compris sur place)'
+  },
+  {
+    id: 'IV.12',
+    section: 'IV',
+    sectionName: 'Spécificités françaises',
+    name: 'Engagement sur niveau de qualité (SLA)',
+    reference: 'Arrêté 2014 Art. 239 a)',
+    criticality: 'MAJOR',
+    applicability: 'FR_ONLY',
+    regulatoryText: {
+      fr: "S'engagent sur un niveau de qualité répondant à un fonctionnement normal du service et, en cas d'incident, conduisant à recourir aux mécanismes de secours."
+    },
+    keywords: {
+      fr: ['qualité', 'SLA', 'engagement', 'fonctionnement normal'],
+      en: ['quality', 'SLA', 'commitment', 'normal operation']
+    },
+    verificationCriteria: 'Engagement qualité/SLA + lien avec BCP'
   }
 ];
 
@@ -472,8 +683,35 @@ export function getRequirementsByCriticality(criticality: 'CRITICAL' | 'MAJOR' |
 }
 
 /**
+ * Get requirements by applicability
+ */
+export function getRequirementsByApplicability(applicability: 'ALL' | 'CRITICAL_FUNCTIONS' | 'EBA_ONLY' | 'FR_ONLY'): Requirement[] {
+  return CHECKLIST.filter(req => req.applicability === applicability);
+}
+
+/**
  * Get all unique sections
  */
 export function getSections(): string[] {
   return [...new Set(CHECKLIST.map(req => req.section))];
+}
+
+/**
+ * Get section names
+ */
+export function getSectionNames(): Record<string, string> {
+  const names: Record<string, string> = {};
+  for (const req of CHECKLIST) {
+    if (!names[req.section]) {
+      names[req.section] = req.sectionName;
+    }
+  }
+  return names;
+}
+
+/**
+ * Get critical requirement IDs that cannot be IMPLICIT
+ */
+export function getCriticalRequirementIds(): string[] {
+  return ['I.7', 'I.10', 'II.4', 'II.10'];
 }
